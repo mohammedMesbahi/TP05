@@ -13,52 +13,19 @@ namespace ADO.NET_PROJECT
 {
     public partial class Form1 : Form
     {
+        Mysqlconn mysqlconn = new Mysqlconn();
+        SqlDataReader reader;
+
         public Form1()
         {
             InitializeComponent();
         }
-        SqlConnection connection = new SqlConnection(@"Data source=NORD\MSSQLSERVER01;initial catalog=ADONET; integrated security =true;");
-        SqlCommand command;
-        string queryString;
-        SqlDataReader reader;
+
         private void Form1_Load(object sender, EventArgs e)
         {
             reload();
         }
-        private bool IsinputsValid()
-        {
-            // Check for input in the Order ID text box.
-            if (textBoxCin.Text == "")
-            {
-                MessageBox.Show("Please specify the CIN.");
-                return false;
-            }
-
-            // Check for characters other than integers.
-            else if (textBoxFirstName.Text == "")
-            {
-                // Show message and clear input.
-                MessageBox.Show("Please specify the First name");
-                return false;
-            }
-            else if (textBoxLastName.Text == "")
-            {
-                MessageBox.Show("Please specify the Last name");
-                return false;
-            }
-            else
-                return true;
-        }
-
-        private bool IsCinValid()
-        {
-            if (textBoxCin.Text == "")
-            {
-                MessageBox.Show("Please specify the CIN.");
-                return false;
-            }
-            else return true;
-        }
+        
 
         private void btnUpDate_Click(object sender, EventArgs e)
         {
@@ -71,51 +38,14 @@ namespace ADO.NET_PROJECT
             {
                 if (IsCinValid())
                 {
-                    queryString = "UPDATE citizens SET FirstName=@FirstName,LastName=@LastName where CIN=@CIN;";
-                    command = new SqlCommand(queryString, connection);
-                    command.Parameters.Add("@CIN", SqlDbType.VarChar);
-                    command.Parameters["@CIN"].Value = textBoxCin.Text;
-                    command.Parameters.Add("@FirstName", SqlDbType.VarChar);
-                    command.Parameters["@FirstName"].Value = textBoxFirstName.Text;
-                    command.Parameters.Add("@LastName", SqlDbType.VarChar);
-                    command.Parameters["@LastName"].Value = textBoxLastName.Text;
-                    try
-                    {
-                        connection.Open();
-                        command.ExecuteNonQuery();
-                        queryString = "select * from citizens";
-                        command = new SqlCommand(queryString, connection);
-                        reader = command.ExecuteReader();
-                        // Create a data table to hold the retrieved data.
-                        DataTable dataTable = new DataTable();
-
-                        // Load the data from SqlDataReader into the data table.
-                        dataTable.Load(reader);
-
-                        // Display the data from the data table in the data grid view.
-                        this.dataGridView1.DataSource = dataTable;
-
-                        // Close the SqlDataReader.
-                        reader.Close();
-
-                        // close the connection
-                        connection.Close();
-                        textBoxCin.Clear();
-                        textBoxFirstName.Clear();
-                        textBoxLastName.Clear();
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                        MessageBox.Show("an Error accured");
-                    }
+                    mysqlconn.upDateRecord(textBoxCin.Text, textBoxFirstName.Text, textBoxLastName.Text);
+                    reader = mysqlconn.getAllRecords();
+                    DataTable dataTable = new DataTable();
+                    dataTable.Load(reader);
+                    this.dataGridView1.DataSource = dataTable;
+                    reader.Close();
+                    clearInputs();
                 }
-
-            }
-            else
-            {
-                // Do something  
-
             }
         }
 
@@ -129,112 +59,46 @@ namespace ADO.NET_PROJECT
             {
                 if (IsinputsValid())
                 {
-                    queryString = "INSERT INTO citizens VALUES(@CIN,@FirstName,@LastName);";
-                    command = new SqlCommand(queryString, connection);
-                    command.Parameters.Add("@CIN", SqlDbType.VarChar);
-                    command.Parameters["@CIN"].Value = textBoxCin.Text;
-                    command.Parameters.Add("@FirstName", SqlDbType.VarChar);
-                    command.Parameters["@FirstName"].Value = textBoxFirstName.Text;
-                    command.Parameters.Add("@LastName", SqlDbType.VarChar);
-                    command.Parameters["@LastName"].Value = textBoxLastName.Text;
-                    try
-                    {
-                        connection.Open();
-                        command.ExecuteNonQuery();
-                        queryString = "select * from citizens";
-                        command = new SqlCommand(queryString, connection);
-                        reader = command.ExecuteReader();
-                        // Create a data table to hold the retrieved data.
-                        DataTable dataTable = new DataTable();
 
-                        // Load the data from SqlDataReader into the data table.
-                        dataTable.Load(reader);
-
-                        // Display the data from the data table in the data grid view.
-                        this.dataGridView1.DataSource = dataTable;
-
-                        // Close the SqlDataReader.
-                        reader.Close();
-                        connection.Close();
-                        textBoxCin.Clear();
-                        textBoxFirstName.Clear();
-                        textBoxLastName.Clear();
-
-                        reload();
-                        
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                        MessageBox.Show("an Error accured");
-                    }
+                    mysqlconn.insertRecord(textBoxCin.Text, textBoxFirstName.Text, textBoxLastName.Text);
+                    reader = mysqlconn.getAllRecords();
+                    DataTable dataTable = new DataTable();
+                    dataTable.Load(reader);
+                    this.dataGridView1.DataSource = dataTable;
+                    reader.Close();
+                    clearInputs();
+                    reload();
                 }
 
 
             }
-            else
-            {
-                // Do something  
-
-            }
-
         }
 
         private void reload()
         {
-            queryString = "select count(*) from citizens";
-            command = new SqlCommand(queryString, connection);
-            try
+
+            int numberOfRows = mysqlconn.numberOfRecords();
+            if (numberOfRows == 0)
             {
-                connection.Open();
-                int numberOfRows = (Int32)command.ExecuteScalar();
-                if (numberOfRows == 0)
-                {
-                    btnDelete.Enabled = false;
-                    btnDisplayAll.Enabled = false;
-                    btnUpDate.Enabled = false;
-                }
-                else
-                {
-                    btnDelete.Enabled = true;
-                    btnDisplayAll.Enabled = true;
-                    btnUpDate.Enabled = true;
-                }
-                connection.Close();
+                btnDelete.Enabled = false;
+                btnDisplayAll.Enabled = false;
+                btnUpDate.Enabled = false;
             }
-            catch
+            else
             {
-                MessageBox.Show("an Error accured");
+                btnDelete.Enabled = true;
+                btnDisplayAll.Enabled = true;
+                btnUpDate.Enabled = true;
             }
         }
 
         private void btnDisplayAll_Click(object sender, EventArgs e)
         {
-            queryString = "select * from citizens";
-            command = new SqlCommand(queryString, connection);
-            try
-            {
-                connection.Open();
-                command.ExecuteNonQuery();
-                reader = command.ExecuteReader();
-                // Create a data table to hold the retrieved data.
-                DataTable dataTable = new DataTable();
-
-                // Load the data from SqlDataReader into the data table.
-                dataTable.Load(reader);
-
-                // Display the data from the data table in the data grid view.
-                this.dataGridView1.DataSource = dataTable;
-
-                // Close the SqlDataReader.
-                reader.Close();
-                connection.Close();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                MessageBox.Show("an Error accured");
-            }
+            reader = mysqlconn.getAllRecords();
+            DataTable dataTable = new DataTable();
+            dataTable.Load(reader);
+            this.dataGridView1.DataSource = dataTable;
+            reader.Close();
         }
 
         private void btnDelete_Click(object sender, EventArgs e)
@@ -248,50 +112,51 @@ namespace ADO.NET_PROJECT
             {
                 if (IsCinValid())
                 {
-                    queryString = "DELETE citizens where CIN=@CIN;";
-                    command = new SqlCommand(queryString, connection);
-                    command.Parameters.Add("@CIN", SqlDbType.VarChar);
-                    command.Parameters["@CIN"].Value = textBoxCin.Text;
-                    try
-                    {
-                        connection.Open();
-                        command.ExecuteNonQuery();
-                        queryString = "select * from citizens";
-                        command = new SqlCommand(queryString, connection);
-                        reader = command.ExecuteReader();
-                        // Create a data table to hold the retrieved data.
-                        DataTable dataTable = new DataTable();
-
-                        // Load the data from SqlDataReader into the data table.
-                        dataTable.Load(reader);
-
-                        // Display the data from the data table in the data grid view.
-                        this.dataGridView1.DataSource = dataTable;
-
-                        // Close the SqlDataReader.
-                        reader.Close();
-
-                        // close the connection
-                        connection.Close();
-                        textBoxCin.Clear();
-                        textBoxFirstName.Clear();
-                        textBoxLastName.Clear();
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                        MessageBox.Show("an Error accured");
-                    }
+                    mysqlconn.deleteRecord(textBoxCin.Text);
+                    reader = mysqlconn.getAllRecords();
+                    DataTable dataTable = new DataTable();
+                    dataTable.Load(reader);
+                    this.dataGridView1.DataSource = dataTable;
+                    reader.Close();
+                    clearInputs();
                     reload();
-                    
                 }
-
+            }
+        }
+        public void clearInputs()
+        {
+            textBoxCin.Clear();
+            textBoxFirstName.Clear();
+            textBoxLastName.Clear();
+        }
+        private bool IsinputsValid()
+        {
+            if (textBoxCin.Text == "")
+            {
+                MessageBox.Show("Please specify the CIN.");
+                return false;
+            }
+            else if (textBoxFirstName.Text == "")
+            {
+                MessageBox.Show("Please specify the First name");
+                return false;
+            }
+            else if (textBoxLastName.Text == "")
+            {
+                MessageBox.Show("Please specify the Last name");
+                return false;
             }
             else
+                return true;
+        }
+        private bool IsCinValid()
+        {
+            if (textBoxCin.Text == "")
             {
-                // Do something  
-
+                MessageBox.Show("Please specify the CIN.");
+                return false;
             }
+            else return true;
         }
     }
 }

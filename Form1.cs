@@ -23,24 +23,7 @@ namespace ADO.NET_PROJECT
         SqlDataReader reader;
         private void Form1_Load(object sender, EventArgs e)
         {
-            queryString = "select count(*) from citizens";
-            command = new SqlCommand(queryString, connection);
-            try
-            {
-                connection.Open();
-                int numberOfRows = (Int32)command.ExecuteScalar();
-                if (numberOfRows == 0)
-                {
-                    btnDelete.Enabled = false;
-                    btnDisplayAll.Enabled = false;
-                    btnUpDate.Enabled = false;
-                }
-                connection.Close();
-            }
-            catch
-            {
-                MessageBox.Show("an Error accured");
-            }
+            reload();
         }
         private bool IsinputsValid()
         {
@@ -67,9 +50,73 @@ namespace ADO.NET_PROJECT
                 return true;
         }
 
+        private bool IsCinValid()
+        {
+            if (textBoxCin.Text == "")
+            {
+                MessageBox.Show("Please specify the CIN.");
+                return false;
+            }
+            else return true;
+        }
+
         private void btnUpDate_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("you clicked me");
+            string message = "Do you want to continue?";
+            string title = "Close Window";
+            MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+            DialogResult result = MessageBox.Show(message, title, buttons);
+
+            if (result == DialogResult.Yes)
+            {
+                if (IsCinValid())
+                {
+                    queryString = "UPDATE citizens SET FirstName=@FirstName,LastName=@LastName where CIN=@CIN;";
+                    command = new SqlCommand(queryString, connection);
+                    command.Parameters.Add("@CIN", SqlDbType.VarChar);
+                    command.Parameters["@CIN"].Value = textBoxCin.Text;
+                    command.Parameters.Add("@FirstName", SqlDbType.VarChar);
+                    command.Parameters["@FirstName"].Value = textBoxFirstName.Text;
+                    command.Parameters.Add("@LastName", SqlDbType.VarChar);
+                    command.Parameters["@LastName"].Value = textBoxLastName.Text;
+                    try
+                    {
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                        queryString = "select * from citizens";
+                        command = new SqlCommand(queryString, connection);
+                        reader = command.ExecuteReader();
+                        // Create a data table to hold the retrieved data.
+                        DataTable dataTable = new DataTable();
+
+                        // Load the data from SqlDataReader into the data table.
+                        dataTable.Load(reader);
+
+                        // Display the data from the data table in the data grid view.
+                        this.dataGridView1.DataSource = dataTable;
+
+                        // Close the SqlDataReader.
+                        reader.Close();
+
+                        // close the connection
+                        connection.Close();
+                        textBoxCin.Clear();
+                        textBoxFirstName.Clear();
+                        textBoxLastName.Clear();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        MessageBox.Show("an Error accured");
+                    }
+                }
+
+            }
+            else
+            {
+                // Do something  
+
+            }
         }
 
         private void btnInsert_Click(object sender, EventArgs e)
@@ -108,6 +155,13 @@ namespace ADO.NET_PROJECT
 
                         // Close the SqlDataReader.
                         reader.Close();
+                        connection.Close();
+                        textBoxCin.Clear();
+                        textBoxFirstName.Clear();
+                        textBoxLastName.Clear();
+
+                        reload();
+                        
                     }
                     catch (Exception ex)
                     {
@@ -124,6 +178,120 @@ namespace ADO.NET_PROJECT
 
             }
 
+        }
+
+        private void reload()
+        {
+            queryString = "select count(*) from citizens";
+            command = new SqlCommand(queryString, connection);
+            try
+            {
+                connection.Open();
+                int numberOfRows = (Int32)command.ExecuteScalar();
+                if (numberOfRows == 0)
+                {
+                    btnDelete.Enabled = false;
+                    btnDisplayAll.Enabled = false;
+                    btnUpDate.Enabled = false;
+                }
+                else
+                {
+                    btnDelete.Enabled = true;
+                    btnDisplayAll.Enabled = true;
+                    btnUpDate.Enabled = true;
+                }
+                connection.Close();
+            }
+            catch
+            {
+                MessageBox.Show("an Error accured");
+            }
+        }
+
+        private void btnDisplayAll_Click(object sender, EventArgs e)
+        {
+            queryString = "select * from citizens";
+            command = new SqlCommand(queryString, connection);
+            try
+            {
+                connection.Open();
+                command.ExecuteNonQuery();
+                reader = command.ExecuteReader();
+                // Create a data table to hold the retrieved data.
+                DataTable dataTable = new DataTable();
+
+                // Load the data from SqlDataReader into the data table.
+                dataTable.Load(reader);
+
+                // Display the data from the data table in the data grid view.
+                this.dataGridView1.DataSource = dataTable;
+
+                // Close the SqlDataReader.
+                reader.Close();
+                connection.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                MessageBox.Show("an Error accured");
+            }
+        }
+
+        private void btnDelete_Click(object sender, EventArgs e)
+        {
+            string message = "Do you want to continue?";
+            string title = "Close Window";
+            MessageBoxButtons buttons = MessageBoxButtons.YesNo;
+            DialogResult result = MessageBox.Show(message, title, buttons);
+
+            if (result == DialogResult.Yes)
+            {
+                if (IsCinValid())
+                {
+                    queryString = "DELETE citizens where CIN=@CIN;";
+                    command = new SqlCommand(queryString, connection);
+                    command.Parameters.Add("@CIN", SqlDbType.VarChar);
+                    command.Parameters["@CIN"].Value = textBoxCin.Text;
+                    try
+                    {
+                        connection.Open();
+                        command.ExecuteNonQuery();
+                        queryString = "select * from citizens";
+                        command = new SqlCommand(queryString, connection);
+                        reader = command.ExecuteReader();
+                        // Create a data table to hold the retrieved data.
+                        DataTable dataTable = new DataTable();
+
+                        // Load the data from SqlDataReader into the data table.
+                        dataTable.Load(reader);
+
+                        // Display the data from the data table in the data grid view.
+                        this.dataGridView1.DataSource = dataTable;
+
+                        // Close the SqlDataReader.
+                        reader.Close();
+
+                        // close the connection
+                        connection.Close();
+                        textBoxCin.Clear();
+                        textBoxFirstName.Clear();
+                        textBoxLastName.Clear();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        MessageBox.Show("an Error accured");
+                    }
+                    reload();
+                    
+                }
+
+            }
+            else
+            {
+                // Do something  
+
+            }
         }
     }
 }
